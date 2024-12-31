@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niti Service Status</title>
+    <style>
+        /* General styling for the page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        /* Navbar styling */
+        .navbar {
+            background-color: #0080fb;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .navbar select, .navbar button {
+            background-color: white;
+            color: #0080fb;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .navbar select:hover, .navbar button:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0080fb;
+            color: white;
+        }
+
+        td {
+            background-color: #f9f9f9;
+        }
+
+        td[id^="status-"], td[id^="uptime-"] {
+            font-weight: bold;
+        }
+
+        h2 {
+            color: #0080fb;
+        }
+
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            .navbar h1 {
+                font-size: 20px;
+            }
+
+            .navbar select, .navbar button {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+        /* Flexbox for aligning label, select, and button */
+        .env-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* Dropdown select styling */
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        select:hover {
+            border-color: #0080fb;
+        }
+
+        /* Button styling */
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #0080fb;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        /* Responsiveness for smaller screens */
+        @media (max-width: 500px) {
+            .env-selector {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            select, button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+    <h1>Service Health Dashboard</h1>
+</div>
+
+<div class="container">
+    <div class="env-selector">
+        <label for="environment-select">Select Environment</label>
+        <select id="environment-select">
+            <option value="production">Prod</option>
+            <option value="sandbox">Sandbox</option>
+            <option value="demo">Demo</option>
+            <option value="staging">Staging</option>
+            <option value="canary">Canary</option>
+            <option value="beta">Beta</option>
+            <option value="uat">UAT</option>
+        </select>
+        <button id="refresh">Refresh</button>
+    </div>
+    <table>
+        <thead>
+        <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Uptime</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Weber</td>
+            <td id="status-weber"></td>
+            <td id="uptime-weber"></td>
+        </tr>
+        <tr>
+            <td>Lumen</td>
+            <td id="status-lumen"></td>
+            <td id="uptime-lumen"></td>
+        </tr>
+        <tr>
+            <td>PREST</td>
+            <td id="status-prest"></td>
+            <td id="uptime-prest"></td>
+        </tr>
+        <tr>
+            <td>Cosmos</td>
+            <td id="status-cosmos"></td>
+            <td id="uptime-cosmos"></td>
+        </tr>
+        <tr>
+            <td>Data Modal Frontend ( Studio )</td>
+            <td id="status-data-modal-frontend"></td>
+            <td id="uptime-data-modal-frontend"></td>
+        </tr>
+        <tr>
+            <td>Data Modal Backend ( Pg Meta )</td>
+            <td id="status-data-modal-backend"></td>
+            <td id="uptime-data-modal-backend"></td>
+        </tr>
+        <tr>
+            <td>Web-Ambri</td>
+            <td id="status-web-ambri"></td>
+            <td id="uptime-web-ambri"></td>
+        </tr>
+        <tr>
+            <td>Web-Ambri New</td>
+            <td id="status-web-ambri-new"></td>
+            <td id="uptime-web-ambri-new"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const urls = [
+        { "name": "prest", "url": "$HOST$/rest/_Health" },
+        { "name": "weber", "url": "$HOST$/$backendRoute$/_Health" },
+        { "name": "lumen", "url": "$HOST$/cta/api/_Health" },
+        { "name": "cosmos", "url": "$HOST$/cosmos/_Health" },
+        { "name": "data-modal-frontend", "url": "$HOST$/blueprint/api/_Health" },
+        { "name": "data-modal-backend", "url": "$HOST$/blueprint/api/pg-meta/_Health" },
+        { "name": "web-ambri", "url": "$HOST$/api/_Health/" },
+        { "name": "web-ambri-new", "url": "$HOST$/api/health/" }
+
+    ];
+
+    let controller = null; // Declare the AbortController outside the functions
+
+
+    function getStatusAndUptimeDom(name) {
+        return {
+            "status": document.getElementById(`status-${name}`),
+            "uptime": document.getElementById(`uptime-${name}`)
+        };
+    }
+
+    const getUrl = (host, urlString) => {
+        let url = urlString.replace("$HOST$", `https://${host}.niti.ai`);
+        if (host === "production") {
+            return url.replace("$backendRoute$", "backend-api");
+        }
+        return url.replace("$backendRoute$", "weber");
+    };
+
+    const setAsPendingStatus = () => {
+        urls.forEach(url => {
+            const { status, uptime } = getStatusAndUptimeDom(url.name);
+            status.textContent = "PENDING";
+            uptime.textContent = "-";
+            status.style.color = "gray";
+            uptime.style.color = "gray";
+        });
+    }
+
+    const fetchHealth = (host) => {
+
+        // Abort the previous fetch if there's an ongoing one
+        if (controller) {
+            controller.abort();
+        }
+
+        // Create a new AbortController for the new fetch request
+        controller = new AbortController();
+        const signal = controller.signal;
+
+
+        urls.forEach(url => {
+            fetch(getUrl(host, url.url), { signal })
+                .then(response => response.json())
+                .then(data => {
+                    const { status, uptime } = getStatusAndUptimeDom(url.name);
+                    status.textContent = data.status;
+                    uptime.textContent = data.uptime;
+                })
+                .catch(error => {
+                    const { status, uptime } = getStatusAndUptimeDom(url.name);
+
+                    if (error.name === 'AbortError') {
+                        console.log(`Fetch for ${url.name} was aborted`);
+                        status.textContent = "PENDING";
+                        uptime.textContent = "-";
+                        status.style.color = "gray";
+                        uptime.style.color = "gray";
+                    } else {
+                        console.error(`Failed fetch for ${url.name}:`, error);
+                        status.textContent = "DOWN";
+                        uptime.textContent = "-";
+                        status.style.color = "red";
+                        uptime.style.color = "red";
+                    }
+                }).finally(() => {
+                const { status, uptime } = getStatusAndUptimeDom(url.name);
+                if (status.textContent === "UP") {
+                    status.style.color = "green";
+                    uptime.style.color = "green";
+                } else if (status.textContent === "PENDING") {
+                    status.style.color = "gray";
+                    uptime.style.color = "gray";
+                } else {
+                    status.style.color = "red";
+                    uptime.style.color = "red";
+                }
+            });
+        });
+    };
+
+    document.getElementById("environment-select").addEventListener("change", (event) => {
+        const selectedEnvironment = event.target.value;
+        setAsPendingStatus();
+        fetchHealth(selectedEnvironment);
+    });
+
+    document.getElementById("refresh").addEventListener("click", () => {
+        const selectedEnvironment = document.getElementById("environment-select").value;
+        setAsPendingStatus();
+        fetchHealth(selectedEnvironment);
+    });
+
+    fetchHealth("production");
+</script>
+
+</body>
+</html>
